@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Click Leaderboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; }
+    #leaderboard { margin-top: 20px; }
+    table { width: 50%; margin: 0 auto; border-collapse: collapse; }
+    th, td { padding: 10px; border: 1px solid #ccc; }
+    th { background-color: #f4f4f4; }
+  </style>
+</head>
+<body>
+  <h1>Click Leaderboard</h1>
+  <div>
+    <input type="text" id="username" placeholder="Enter your name" required>
+    <button onclick="startGame()">Start Game</button>
+    <button onclick="submitScore()">Submit Score</button>
+    <p>Score: <span id="score">0</span></p>
+  </div>
+  
+  <div id="leaderboard">
+    <h2>Leaderboard</h2>
+    <table>
+      <thead>
+        <tr><th>Rank</th><th>Name</th><th>Score</th></tr>
+      </thead>
+      <tbody id="leaderboardTable"></tbody>
+    </table>
+  </div>
+
+  <script>
+    let score = 0;
+    const leaderboardId = '25118';
+    const apiKey = 'dev_e732b767e16f4e10860bea61fe0f9af3';
+
+    // Function to start the game and increase score with clicks
+    function startGame() {
+      document.addEventListener('click', increaseScore);
+    }
+
+    // Increase score by 1 each time the button is clicked
+    function increaseScore() {
+      score++;
+      document.getElementById('score').innerText = score;
+    }
+
+    // Function to submit score to LootLocker
+    async function submitScore() {
+      const username = document.getElementById('username').value;
+      if (!username) {
+        alert("Please enter your name.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`https://api.lootlocker.io/game/leaderboards/${leaderboardId}/submit`, {
+          method: 'POST',
+          headers: {
+            'x-api-key': apiKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            member_id: username,
+            score: score
+          })
+        });
+        const data = await response.json();
+        alert('Score submitted!');
+        score = 0;
+        document.getElementById('score').innerText = score;
+        fetchLeaderboard();
+      } catch (error) {
+        console.error('Error submitting score:', error);
+      }
+    }
+
+    // Fetch leaderboard data from LootLocker
+    async function fetchLeaderboard() {
+      try {
+        const response = await fetch(`https://api.lootlocker.io/game/leaderboards/${leaderboardId}`, {
+          method: 'GET',
+          headers: {
+            'x-api-key': apiKey
+          }
+        });
+        const data = await response.json();
+        const leaderboardTable = document.getElementById('leaderboardTable');
+        leaderboardTable.innerHTML = '';
+        data.entries.forEach((entry, index) => {
+          const row = `<tr><td>${index + 1}</td><td>${entry.member_id}</td><td>${entry.score}</td></tr>`;
+          leaderboardTable.innerHTML += row;
+        });
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+      }
+    }
+
+    // Fetch leaderboard on page load
+    fetchLeaderboard();
+  </script>
+</body>
+</html>
